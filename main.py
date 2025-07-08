@@ -1,7 +1,9 @@
 import os
+import time 
 import pygame as pg
 import sys
 import math
+from typing import Callable, List
 
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
@@ -166,6 +168,31 @@ class Score:
     def update(self, screen:pg.Surface):
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
+        
+class Weapon:
+    """1種類の武器情報を保持するクラス"""
+    
+    def __init__(
+        self,
+        name:str,
+        cooldown:float,
+        fire_func: Callable[[Bird], List[pg.sprite.Sprite]],
+    ) -> None:
+        self.name = name 
+        self.cooldown = cooldown
+        self._fire_func = fire_func
+        self._last_fire_time = 0.0
+        
+    def _ready(self) -> bool:
+        """クールダウン経過判定"""
+        return time.time() - self._last_fire_time >= self.cooldown 
+    
+    def fire(self, bird: Bird) -> List[pg.sprite.Sprite]:
+        """武器を発射し、生成された弾Spriteを返す"""
+        if not self._ready():
+            return[]
+        self._last_fire_time = time.time()
+        return self._fire_func(bird)
 
 
 def main():
@@ -203,7 +230,7 @@ def main():
         pg.display.update()
         
         if tmr%31==0:
-            score.value += 1
+            score.value += 0
         tmr += 1
         clock.tick(50)
 
