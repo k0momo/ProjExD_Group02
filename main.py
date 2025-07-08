@@ -7,6 +7,7 @@ import time
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
 save_score = 0
+save_lv = 0
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -197,12 +198,13 @@ class Score:
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
         self.value = 0
-        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        self.lv = 1
+        self.image = self.font.render(f"Score: {self.value}  Level:{self.lv}", 0, self.color)
         self.rect = self.image.get_rect()
-        self.rect.center = 100, HEIGHT-50
+        self.rect.center = 150, HEIGHT-50
 
     def update(self, screen:pg.Surface):
-        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        self.image = self.font.render(f"Score: {self.value}  Level:{self.lv}", 0, self.color)
         screen.blit(self.image, self.rect)
 
 
@@ -235,7 +237,7 @@ def GameOver(screen:pg.Surface):
     fonto1 = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 100)
     txt1 = fonto1.render("GAME OVER", True, (255, 255, 255))
     fonto2 = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 80)
-    txt2 = fonto2.render(f"スコア:{save_score}", True, (255, 255, 255))
+    txt2 = fonto2.render(f"Score:{save_score}  Level:{save_lv}", True, (255, 255, 255))
     fonto3 = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 50)
     txt3 = fonto3.render("PRESS SPACE TO RESTART", True, (255, 255, 255))
 
@@ -250,7 +252,7 @@ def GameOver(screen:pg.Surface):
             
         screen.blit(fin_img, [0, 0])
         screen.blit(txt1, [325, 200])
-        screen.blit(txt2, [380, 400])
+        screen.blit(txt2, [240, 400])
         screen.blit(txt3, [300, 500])
         pg.display.update()
 
@@ -300,8 +302,9 @@ def main(screen:pg.Surface):
             score.value += 1
         tmr += 1
         clock.tick(50)
-        global save_score 
+        global save_score, save_lv
         save_score = score.value
+        save_lv = score.lv
 
 
 if __name__ == "__main__":
