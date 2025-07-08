@@ -2,10 +2,47 @@ import os
 import pygame as pg
 import sys
 import math
+import time
 
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
+save_score = 0
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+
+def menu():
+    """
+    メインメニューに関する関数
+    """
+
+    pg.init()
+    pg.display.set_caption("生きろこうかとん！")
+    bg_img = pg.image.load(f"fig/menu_bg.jpg")
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
+    
+    fonto1 = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 80)
+    txt1 = fonto1.render("生きろこうかとん!", True, (255, 255, 255))
+    fonto2 = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 50)
+    txt2 = fonto2.render("PRESS SPACE TO START", True, (255, 255, 255))
+
+    while True:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                return 0
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                main(screen)
+                time.sleep(1)
+                GameOver(screen)
+                return 0
+            
+        screen.blit(bg_img, [0, 0])
+        screen.blit(txt1, [235, 200])
+        screen.blit(txt2, [315, 500])
+        pg.display.update()
+        
+        
+    
+
 
 
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
@@ -58,6 +95,7 @@ class Bird(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 10
+        self.hp = 3
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -168,18 +206,72 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
-def main():
+class BirdHpUI:
+    """
+    こうかとんのHPのUIに関するクラス
+    """
+    def __init__(self, bird:Bird):
+        self.font = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+        self.color = (255, 0, 0)
+        self.value = bird.hp
+        self.image = self.font.render(f"残りHP: {self.value}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 1000, HEIGHT-50
+
+    def update(self, screen:pg.Surface):
+        self.image = self.font.render(f"残りHP: {self.value}", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+
+def GameOver(screen:pg.Surface):
+    """
+    gameoverに関する関数
+    """
+
+    fin_img = pg.Surface((WIDTH, HEIGHT))
+    pg.draw.rect(fin_img, (0, 0, 0), (0, 0, WIDTH, HEIGHT), 0)
+    fin_img.set_alpha(128)
+    
+    fonto1 = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 100)
+    txt1 = fonto1.render("GAME OVER", True, (255, 255, 255))
+    fonto2 = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 80)
+    txt2 = fonto2.render(f"スコア:{save_score}", True, (255, 255, 255))
+    fonto3 = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 50)
+    txt3 = fonto3.render("PRESS SPACE TO RESTART", True, (255, 255, 255))
+
+    while True:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                return 0
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                main(screen)
+                GameOver(screen)
+                return 0
+            
+        screen.blit(fin_img, [0, 0])
+        screen.blit(txt1, [325, 200])
+        screen.blit(txt2, [380, 400])
+        screen.blit(txt3, [300, 500])
+        pg.display.update()
+
+
+def main(screen:pg.Surface):
     pg.init()
-    pg.display.set_caption("生きろこうかとん！")
+    #pg.display.set_caption("生きろこうかとん！")
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
-    screen = pg.display.set_mode((WIDTH, HEIGHT))
+    #screen = pg.display.set_mode((WIDTH, HEIGHT))
     score  = Score()
     beams = pg.sprite.Group()
 
     bird = Bird(3, (900, 400))
-
+    b_hp_ui = BirdHpUI(bird)
     clock = pg.time.Clock()
     tmr = 0
+    pg.mixer.init()
+    pg.mixer.music.load("bgm/maou_game_dangeon19.mp3") #bgmの設定
+    pg.mixer.music.play(-1)
+    sound_effect = pg.mixer.Sound("bgm/8bit_shoot2.mp3") #効果音の設定
+    sound_effect.set_volume(0.7)
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -187,6 +279,7 @@ def main():
             if event.type == pg.QUIT:
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                sound_effect.play()
                 if key_lst[pg.K_LSHIFT]:
                     neobeam = NeoBeam(bird, 9)
                     beams.add(neobeam.gen_beams())
@@ -198,6 +291,7 @@ def main():
 
         bird.update(key_lst, screen)
         score.update(screen)
+        b_hp_ui.update(screen)
         beams.update()
         beams.draw(screen)
         pg.display.update()
@@ -206,10 +300,12 @@ def main():
             score.value += 1
         tmr += 1
         clock.tick(50)
+        global save_score 
+        save_score = score.value
 
 
 if __name__ == "__main__":
     pg.init()
-    main()
+    menu()
     pg.quit()
     sys.exit()
