@@ -193,6 +193,29 @@ class Weapon:
             return[]
         self._last_fire_time = time.time()
         return self._fire_func(bird)
+    
+class WeaponSystem:
+    """複数武器を切替・発射するマネージャー。"""
+    
+    def __init__(self, player: Bird) -> None:
+        self._player = player
+        self._weapons: list[Weapon] = []
+        self._idx = 0  # 現在の武器のインデックス
+        
+    def add(self, weapon: Weapon) -> None:
+        self._weapons.append(weapon)
+        
+    def next(self) -> None:
+        """次の武器に切り替える"""
+        if self._weapons:
+            self._idx = (self._idx + 1) % len(self._weapons)
+            
+    @property
+    def current(self) -> Weapon:
+        return self._weapons[self._idx]
+    
+    def fire(self) -> List[pg.sprite.Sprite]:
+        return self.current.fire(self._player)
 
 
 def main():
@@ -200,10 +223,15 @@ def main():
     pg.display.set_caption("生きろこうかとん！")
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
+    
     score  = Score()
     beams = pg.sprite.Group()
-
     bird = Bird(3, (900, 400))
+
+    # 武器システム設定
+    weapon_system = WeaponSystem(bird)
+    weapon_system.add(Weapon("Beam", 0.15, lambda b: [Beam(b)]))
+    weapon_system.add(Weapon("Spread", 0.8, lambda b: NeoBeam(b, 9).gen_beams()))
 
     clock = pg.time.Clock()
     tmr = 0
@@ -213,23 +241,26 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                if key_lst[pg.K_LSHIFT]:
-                    neobeam = NeoBeam(bird, 9)
-                    beams.add(neobeam.gen_beams())
-                else:
-                    beams.add(Beam(bird))
-            
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_TAB: # TABキーで武器を切り替え
+                    weapon_system.next()
+                elif event.key == pg.K_SPACE: # スペースキーで武器を発射
+                    beams.add(weapon_system.fire())
+                    
         screen.blit(bg_img, [0, 0])
-
-
         bird.update(key_lst, screen)
         score.update(screen)
         beams.update()
         beams.draw(screen)
+        
+        # 現在武器名を表示
+        font = pg.font.Font(None, 36)
+        hud = font.render(f"Weapon: {weapon_system.current.name}", True, (255, 255, 255))
+        screen.blit(hud, (10, 10))
+        
         pg.display.update()
         
-        if tmr%31==0:
+        if tmr % 31 == 0:
             score.value += 0
         tmr += 1
         clock.tick(50)
