@@ -176,45 +176,45 @@ class Weapon:
         self,
         name:str,
         cooldown:float,
-        fire_func: Callable[[Bird], List[pg.sprite.Sprite]],
-    ) -> None:
+        fire_func: Callable[[Bird], List[pg.sprite.Sprite]], # 発射関数
+    ) -> None: 
         self.name = name 
         self.cooldown = cooldown
-        self._fire_func = fire_func
+        self._fire_func = fire_func 
         self._last_fire_time = 0.0
         
-    def _ready(self) -> bool:
+    def _ready(self) -> bool: # クールダウン経過判定
         """クールダウン経過判定"""
-        return time.time() - self._last_fire_time >= self.cooldown 
+        return time.time() - self._last_fire_time >= self.cooldown # クールダウン時間を超えたかどうか
     
-    def fire(self, bird: Bird) -> List[pg.sprite.Sprite]:
+    def fire(self, bird: Bird) -> List[pg.sprite.Sprite]: # 発射処理
         """武器を発射し、生成された弾Spriteを返す"""
-        if not self._ready():
-            return[]
-        self._last_fire_time = time.time()
-        return self._fire_func(bird)
+        if not self._ready(): 
+            return[] # クールダウン中は何もしない
+        self._last_fire_time = time.time() # 最後の発射時間を更新
+        return self._fire_func(bird) # 発射関数を呼び出して弾を生成
     
-class WeaponSystem:
+class WeaponSystem: 
     """複数武器を切替・発射するマネージャー。"""
     
-    def __init__(self, player: Bird) -> None:
-        self._player = player
-        self._weapons: list[Weapon] = []
+    def __init__(self, player: Bird) -> None: # 武器システムの初期化
+        self._player = player # 武器を発射するプレイヤー
+        self._weapons: list[Weapon] = [] # 武器のリスト
         self._idx = 0  # 現在の武器のインデックス
         
     def add(self, weapon: Weapon) -> None:
-        self._weapons.append(weapon)
+        self._weapons.append(weapon) # 武器を追加
         
     def next(self) -> None:
         """次の武器に切り替える"""
-        if self._weapons:
-            self._idx = (self._idx + 1) % len(self._weapons)
+        if self._weapons: # 武器が存在する場合
+            self._idx = (self._idx + 1) % len(self._weapons) # 循環する
             
-    @property
-    def current(self) -> Weapon:
-        return self._weapons[self._idx]
+    @property # 現在の武器を取得
+    def current(self) -> Weapon: # 現在の武器を返す
+        return self._weapons[self._idx] 
     
-    def fire(self) -> List[pg.sprite.Sprite]:
+    def fire(self) -> List[pg.sprite.Sprite]: # 現在の武器を発射
         return self.current.fire(self._player)
 
 
@@ -230,18 +230,18 @@ def main():
 
     # 武器システム設定
     weapon_system = WeaponSystem(bird)
-    weapon_system.add(Weapon("Beam", 0.15, lambda b: [Beam(b)]))
-    weapon_system.add(Weapon("Spread", 0.8, lambda b: NeoBeam(b, 9).gen_beams()))
+    weapon_system.add(Weapon("Beam", 0.15, lambda b: [Beam(b)])) # 通常のビームを放つ
+    weapon_system.add(Weapon("Spread", 0.8, lambda b: NeoBeam(b, 9).gen_beams())) # 9方向にビームを放つ
 
     clock = pg.time.Clock()
     tmr = 0
 
     while True:
-        key_lst = pg.key.get_pressed()
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
+        key_lst = pg.key.get_pressed() 
+        for event in pg.event.get(): 
+            if event.type == pg.QUIT: # ウィンドウの×ボタンで終了
                 return 0
-            if event.type == pg.KEYDOWN:
+            if event.type == pg.KEYDOWN: # キーが押されたとき
                 if event.key == pg.K_TAB: # TABキーで武器を切り替え
                     weapon_system.next()
                 elif event.key == pg.K_SPACE: # スペースキーで武器を発射
@@ -254,9 +254,9 @@ def main():
         beams.draw(screen)
         
         # 現在武器名を表示
-        font = pg.font.Font(None, 36)
-        hud = font.render(f"Weapon: {weapon_system.current.name}", True, (255, 255, 255))
-        screen.blit(hud, (10, 10))
+        font = pg.font.Font(None, 36) # フォントの設定
+        hud = font.render(f"Weapon: {weapon_system.current.name}", True, (255, 255, 255)) # 武器名を描画
+        screen.blit(hud, (10, 10)) # 画面左上に表示
         
         pg.display.update()
         
