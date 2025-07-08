@@ -231,9 +231,9 @@ def main():
                 else:
                     beams.add(Beam(bird))
 
-        # 1秒ごとに敵を出現（最大5体）
+        # 1秒ごとに敵を出現
         if tmr % 60 == 0:
-            for _ in range(min(1 + tmr // 600, 5)):
+            for _ in range(min(1 + tmr // 600, 10)):
                 enemies.add(Enemy(bird, tmr))
             
         screen.blit(bg_img, [0, 0])
