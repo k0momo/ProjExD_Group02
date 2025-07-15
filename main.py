@@ -288,7 +288,7 @@ class Score:
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
         self.value = 0
-        self.lv = 0
+        self.lv = 1
         self.next_exp = 10 # 次のレベルまでの経験値
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()

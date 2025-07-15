@@ -1,4 +1,5 @@
 # 生きろこうかとん！
+![title](fig/screen_shot.png)
 
 ## 実行環境の必要条件
 * python >= 3.13.2
