@@ -243,8 +243,8 @@ class Score:
         スコアに経験値を加算し，レベルアップの判定を行う
         引数 exp：加算する経験値
         """
-        self.Value += exp
-        if self.Value >= self.next_exp:
+        self.value += exp
+        if self.value >= self.next_exp:
             self.lv += 1
             self.next_exp += int(self.lv * 10)  # 次のレベルアップまでの経験値を増加
 
