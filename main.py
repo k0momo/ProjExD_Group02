@@ -370,7 +370,7 @@ class WeaponSystem:
             self._idx = (self._idx + 1) % len(self._weapons) # 循環する
             
     @property # 現在の武器を取得
-    def current(self) -> WeaponSystem: # 現在の武器を返す
+    def current(self) -> Weapon: # 現在の武器を返す
         return self._weapons[self._idx] 
     
     def fire(self) -> List[pg.sprite.Sprite]: # 現在の武器を発射
