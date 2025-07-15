@@ -34,7 +34,7 @@ def menu():
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 main(screen)
                 time.sleep(1)
-                GameOver(scree
+                GameOver(screen)
                 return 0
             
         screen.blit(bg_img, [0, 0])
@@ -334,10 +334,10 @@ class WeaponSystem:
     
     def __init__(self, player: Bird) -> None: # 武器システムの初期化
         self._player = player # 武器を発射するプレイヤー
-        self._weapons: list[Weapon] = [] # 武器のリスト
+        self._weapons: list[WeaponSystem] = [] # 武器のリスト
         self._idx = 0  # 現在の武器のインデックス
         
-    def add(self, weapon: Weapon) -> None:
+    def add(self, weapon) -> None:
         self._weapons.append(weapon) # 武器を追加
         
     def next(self) -> None:
@@ -346,7 +346,7 @@ class WeaponSystem:
             self._idx = (self._idx + 1) % len(self._weapons) # 循環する
             
     @property # 現在の武器を取得
-    def current(self) -> Weapon: # 現在の武器を返す
+    def current(self) -> WeaponSystem: # 現在の武器を返す
         return self._weapons[self._idx] 
     
     def fire(self) -> List[pg.sprite.Sprite]: # 現在の武器を発射
