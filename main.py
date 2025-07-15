@@ -230,10 +230,23 @@ class Score:
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
         self.value = 0
+        self.value = 0
+        self.exp = 0
         self.lv = 1
-        self.image = self.font.render(f"Score: {self.value}  Level:{self.lv}", 0, self.color)
+        self.next_exp = 10 # 次のレベルまでの経験値
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 150, HEIGHT-50
+
+    def gain_exp(self, exp: int):
+        """
+        スコアに経験値を加算し，レベルアップの判定を行う
+        引数 exp：加算する経験値
+        """
+        self.exp += exp
+        if self.exp >= self.next_exp:
+            self.level += 1
+            self.next_exp += int(self.level * 10)  # 次のレベルアップまでの経験値を増加
 
     def update(self, screen:pg.Surface):
         self.image = self.font.render(f"Score: {self.value}  Level:{self.lv}", 0, self.color)
@@ -349,8 +362,19 @@ def main(screen:pg.Surface):
             return
 
         
-        if tmr%31==0:
-            score.value += 1
+
+        for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():  # ビームと衝突した敵機リスト
+            exps.add(Explosion(emy, 100))  # 爆発エフェクト
+            score.value += 10  # 10点アップ
+            score.gain_exp(5)
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
+
+        for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            score.value += 1  # 1点アップ
+            score.gain_exp(5)
+        #if tmr%31==0:
+            #score.value += 1
         tmr += 1
         clock.tick(50)
         global save_score, save_lv
