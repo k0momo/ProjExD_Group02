@@ -156,26 +156,43 @@ class Enemy(pg.sprite.Sprite):
             self.rect.center = (WIDTH + 50, random.randint(0, HEIGHT))
 
         self.bird = bird
+        self.is_frozen = False
+        self.freeze_timer = 0
+    
 
     def update(self):
         """
         敵がこうかとんを追従するように設定
         """
-        dx = self.bird.rect.centerx - self.rect.centerx
-        dy = self.bird.rect.centery - self.rect.centery
-        dist = math.hypot(dx, dy)
-        if dist != 0:
-            dx, dy = dx / dist, dy / dist
-        self.rect.move_ip(dx * self.speed, dy * self.speed)
+        if not self.is_frozen: # 凍結中でなければ移動
+            dx = self.bird.rect.centerx - self.rect.centerx
+            dy = self.bird.rect.centery - self.rect.centery
+            dist = math.hypot(dx, dy)
+            if dist != 0:
+                dx, dy = dx / dist, dy / dist
+            self.rect.move_ip(dx * self.speed, dy * self.speed)
+        else: # 凍結中のタイマーを減らす
+            self.freeze_timer -= 1
+            if self.freeze_timer <= 0:
+                self.unfreeze()
 
+    def freeze(self):
+        """敵を凍結状態にする"""
+        self.is_frozen = True
+        self.freeze_timer = 3 * 50 # 3秒 * 50fps = 150フレーム
 
-
+    def unfreeze(self):
+        """敵の凍結状態を解除する"""
+        self.is_frozen = False
+        self.freeze_timer = 0
+# Weaponクラスの前にSpecialShotクラスを追加
+ 
 
 class Beam(pg.sprite.Sprite):
     """
     ビームに関するクラス
     """
-    def __init__(self, bird: Bird, angle0 = 0):
+    def __init__(self, bird: Bird, angle0 = 0, size: float = 1.0, is_special: bool = False):
         """
         ビーム画像Surfaceを生成する
         引数 bird：ビームを放つこうかとん
@@ -183,14 +200,15 @@ class Beam(pg.sprite.Sprite):
         super().__init__()
         self.vx, self.vy = bird.dire
         angle = math.degrees(math.atan2(-self.vy, self.vx)) + angle0
-        self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1.0)
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, size)
         self.vx = math.cos(math.radians(angle))
         self.vy = -math.sin(math.radians(angle))
         self.rect = self.image.get_rect()
         self.rect.centery = bird.rect.centery+bird.rect.height*self.vy
         self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
         self.speed = 10
-
+        self.is_special = is_special
+        
     def update(self):
         """
         ビームを速度ベクトルself.vx, self.vyに基づき移動させる
@@ -198,7 +216,43 @@ class Beam(pg.sprite.Sprite):
         """
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
         if check_bound(self.rect) != (True, True):
-            self.kill()
+            if not self.is_special: 
+                self.kill()
+            elif self.is_special and (self.rect.left > WIDTH + 50 or self.rect.right < -50 or self.rect.top > HEIGHT + 50 or self.rect.bottom < -50):
+                self.kill()
+
+
+class SpecialShot:
+    """
+    必殺技に関するクラス
+    """
+    EXP_COST = 100 # 特殊ビーム発射に必要なスコア
+
+    def __init__(self):
+        """
+        SpecialShotの初期設定を行う
+        """
+        pass
+
+    def activate(self, bird: "Bird", score: "Score", enemies: pg.sprite.Group, beams: pg.sprite.Group) -> bool:
+        """
+        特殊ビームを発射し、敵を凍結させる処理を行う。
+        発動に成功したらTrue、失敗したらFalseを返す。
+        引数 bird: こうかとんインスタンス
+        引数 score: スコアインスタンス
+        引数 enemies: 敵グループ
+        引数 beams: ビームグループ
+        """
+        if score.value >= SpecialShot.EXP_COST:
+            # 特大ビームを発射 (size=3.0, is_special=True)
+            beams.add(Beam(bird, 0, 3.0, True))
+            score.value -= SpecialShot.EXP_COST # スコアを消費
+
+            # 全ての敵を一定時間停止させる
+            for enemy in enemies:
+                enemy.freeze()
+            return True
+        return False       
 
 
 class NeoBeam:
@@ -394,6 +448,8 @@ def main(screen:pg.Surface):
     weapon_system = WeaponSystem(bird)
     weapon_system.add(Weapon("Beam", 0.15, lambda b: [Beam(b)])) # 通常のビームを放つ
     weapon_system.add(Weapon("Spread", 0.8, lambda b: NeoBeam(b, 9).gen_beams())) # 9方向にビームを放つ
+    special_shot_manager = SpecialShot() # SpecialShotインスタンスを作成
+
 
     clock = pg.time.Clock()
 
@@ -410,18 +466,22 @@ def main(screen:pg.Surface):
             if event.type == pg.QUIT: # ウィンドウの×ボタンで終了
                 return 0
             if event.type == pg.KEYDOWN:
-                sound_effect.play()
                 if event.key == pg.K_TAB: # TABキーで武器を切り替え
                     weapon_system.next()
                 elif event.key == pg.K_SPACE: # スペースキーで武器を発射
+                    sound_effect.play()
                     beams.add(weapon_system.fire())
+                elif event.key == pg.K_e: # 'e'キーでスペシャルショット発動
+                    sound_effect.play()
+                    special_shot_manager.activate(bird, score, enemies, beams)
+
 
         # 1秒ごとに敵を出現
         if tmr % 60 == 0:
             for _ in range(min(1 + tmr // 600, 10)):
                 enemies.add(Enemy(bird, tmr))
-
-# 現在武器名を表示
+        
+        # 現在武器名を表示
         font = pg.font.Font(None, 36) # フォントの設定
         hud = font.render(f"Weapon: {weapon_system.current.name}", True, (255, 255, 255)) # 武器名を描画
         screen.blit(hud, (10, 10)) # 画面左上に表示
@@ -436,13 +496,11 @@ def main(screen:pg.Surface):
                 time.sleep(1)
                 return 0
                 
-
         for emy in pg.sprite.groupcollide(enemies, beams, True, True).keys():  # ビームと衝突した敵機リスト
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             score.gain_exp(5)
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
-
 
         screen.blit(bg_img, [0, 0])
         bird.update(key_lst, screen)
@@ -452,8 +510,7 @@ def main(screen:pg.Surface):
         beams.update()
         beams.draw(screen)
         enemies.update()
-        enemies.draw(screen)
-        
+        enemies.draw(screen)    
         
         tmr += 1
         clock.tick(50)
