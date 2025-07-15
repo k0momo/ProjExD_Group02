@@ -3,6 +3,7 @@ import pygame as pg
 import sys
 import math
 import time
+import random
 
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
@@ -124,13 +125,49 @@ class Bird(pg.sprite.Sprite):
 
 class Enemy(pg.sprite.Sprite):
     """
-    敵に関するクラス
+    敵キャラのクラス
     """
-    def __init__(self):
-        pass
+    def __init__(self, bird: Bird, tmr: int):
+        super().__init__()
+        self.type = tmr // 600 % 3  # 時間に応じて種類を変える
+
+        if self.type == 0:
+            self.image = pg.transform.rotozoom(pg.image.load("fig/alien1.png"), 0, 0.6)
+            self.speed = 2
+        elif self.type == 1:
+            self.image = pg.transform.rotozoom(pg.image.load("fig/alien2.png"), 0, 0.5)
+            self.speed = 3
+        else:
+            self.image = pg.transform.rotozoom(pg.image.load("fig/alien3.png"), 0, 0.4)
+            self.speed = 4
+
+        self.rect = self.image.get_rect()
+
+        # スポーン位置
+        edge = random.choice(["top", "bottom", "left", "right"])
+        if edge == "top":
+            self.rect.center = (random.randint(0, WIDTH), -50)
+        elif edge == "bottom":
+            self.rect.center = (random.randint(0, WIDTH), HEIGHT + 50)
+        elif edge == "left":
+            self.rect.center = (-50, random.randint(0, HEIGHT))
+        else:
+            self.rect.center = (WIDTH + 50, random.randint(0, HEIGHT))
+
+        self.bird = bird
 
     def update(self):
-        pass
+        """
+        敵がこうかとんを追従するように設定
+        """
+        dx = self.bird.rect.centerx - self.rect.centerx
+        dy = self.bird.rect.centery - self.rect.centery
+        dist = math.hypot(dx, dy)
+        if dist != 0:
+            dx, dy = dx / dist, dy / dist
+        self.rect.move_ip(dx * self.speed, dy * self.speed)
+
+
 
 
 class Beam(pg.sprite.Sprite):
@@ -258,6 +295,7 @@ def main(screen:pg.Surface):
     #screen = pg.display.set_mode((WIDTH, HEIGHT))
     score  = Score()
     beams = pg.sprite.Group()
+    enemies = pg.sprite.Group()  # 敵管理用グループ
 
     bird = Bird(3, (900, 400))
     b_hp_ui = BirdHpUI(bird)
@@ -281,15 +319,35 @@ def main(screen:pg.Surface):
                     beams.add(neobeam.gen_beams())
                 else:
                     beams.add(Beam(bird))
+
+        # 1秒ごとに敵を出現
+        if tmr % 60 == 0:
+            for _ in range(min(1 + tmr // 600, 10)):
+                enemies.add(Enemy(bird, tmr))
             
         screen.blit(bg_img, [0, 0])
 
         bird.update(key_lst, screen)
         score.update(screen)
         b_hp_ui.update(screen)
+        
         beams.update()
         beams.draw(screen)
+        enemies.update()
+        enemies.draw(screen)
+        # ビームと敵の衝突判定
+        for beam in beams:
+            hit_enemies = pg.sprite.spritecollide(beam, enemies, True)
+            if hit_enemies:
+                beam.kill()
+                score.value += len(100 * hit_enemies)
+        score.update(screen)
         pg.display.update()
+        # ゲームオーバー判定
+        if pg.sprite.spritecollideany(bird, enemies):
+            print("Game Over!")
+            return
+
         
         if tmr%31==0:
             score.value += 1
