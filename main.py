@@ -328,7 +328,31 @@ class Explosion(pg.sprite.Sprite):
         self.image = self.imgs[self.life//10%2]
         if self.life < 0:
             self.kill()
-            
+
+class Weapon:
+    """1種類の武器情報を保持するクラス"""
+    
+    def __init__(
+        self,
+        name:str,
+        cooldown:float,
+        fire_func: Callable[[Bird], List[pg.sprite.Sprite]], # 発射関数
+    ) -> None: 
+        self.name = name 
+        self.cooldown = cooldown
+        self._fire_func = fire_func 
+        self._last_fire_time = 0.0
+        
+    def _ready(self) -> bool: # クールダウン経過判定
+        """クールダウン経過判定"""
+        return time.time() - self._last_fire_time >= self.cooldown # クールダウン時間を超えたかどうか
+    
+    def fire(self, bird: Bird) -> List[pg.sprite.Sprite]: # 発射処理
+        """武器を発射し、生成された弾Spriteを返す"""
+        if not self._ready(): 
+            return[] # クールダウン中は何もしない
+        self._last_fire_time = time.time() # 最後の発射時間を更新
+        return self._fire_func(bird) # 発射関数を呼び出して弾を生成            
 class WeaponSystem: 
     """複数武器を切替・発射するマネージャー。"""
     
