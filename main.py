@@ -15,7 +15,6 @@ def menu():
     """
     メインメニューに関する関数
     """
-
     pg.init()
     pg.display.set_caption("生きろこうかとん！")
     bg_img = pg.image.load(f"fig/menu_bg.jpg")
@@ -40,10 +39,6 @@ def menu():
         screen.blit(txt1, [235, 200])
         screen.blit(txt2, [315, 500])
         pg.display.update()
-        
-        
-    
-
 
 
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
@@ -229,7 +224,6 @@ def GameOver(screen:pg.Surface):
     """
     gameoverに関する関数
     """
-
     fin_img = pg.Surface((WIDTH, HEIGHT))
     pg.draw.rect(fin_img, (0, 0, 0), (0, 0, WIDTH, HEIGHT), 0)
     fin_img.set_alpha(128)
@@ -289,7 +283,6 @@ def main(screen:pg.Surface):
                     beams.add(Beam(bird))
             
         screen.blit(bg_img, [0, 0])
-
 
         bird.update(key_lst, screen)
         score.update(screen)
