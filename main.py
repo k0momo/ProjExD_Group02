@@ -208,7 +208,7 @@ class Beam(pg.sprite.Sprite):
         self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
         self.speed = 10
         self.is_special = is_special
-        
+
     def update(self):
         """
         ビームを速度ベクトルself.vx, self.vyに基づき移動させる
@@ -285,8 +285,7 @@ class Score:
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
         self.value = 0
-        #self.exp = 0
-        self.lv = 1
+        self.lv = 0
         self.next_exp = 10 # 次のレベルまでの経験値
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
@@ -447,7 +446,7 @@ def main(screen:pg.Surface):
     # 武器システム設定
     weapon_system = WeaponSystem(bird)
     weapon_system.add(Weapon("Beam", 0.15, lambda b: [Beam(b)])) # 通常のビームを放つ
-    weapon_system.add(Weapon("Spread", 0.8, lambda b: NeoBeam(b, 9).gen_beams())) # 9方向にビームを放つ
+    weapon_system.add(Weapon("Spread", 0.8, lambda b: NeoBeam(b, 3+int(score.lv//5)).gen_beams())) # 3+lvの数でビームを放つ
     special_shot_manager = SpecialShot() # SpecialShotインスタンスを作成
 
 
