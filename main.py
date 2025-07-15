@@ -284,6 +284,24 @@ def GameOver(screen:pg.Surface):
         pg.display.update()
 
 
+class BirdHpUI:
+    """
+    こうかとんのHPのUIに関するクラス
+    """
+    def __init__(self, bird:Bird):
+        self.font = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+        self.color = (255, 0, 0)
+        self.value = bird.hp
+        self.image = self.font.render(f"残りHP: {self.value}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 1000, HEIGHT-50
+
+    def update(self, screen:pg.Surface):
+        self.image = self.font.render(f"残りHP: {self.value}", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+
+
 class Explosion(pg.sprite.Sprite):
     """
     爆発に関するクラス
@@ -366,11 +384,16 @@ def main(screen:pg.Surface):
         for event in pg.event.get(): 
             if event.type == pg.QUIT: # ウィンドウの×ボタンで終了
                 return 0
-            if event.type == pg.KEYDOWN: # キーが押されたとき
+            if event.type == pg.KEYDOWN:
                 sound_effect.play()
-                if event.key == pg.K_TAB: # TABキーで武器を切り替え
+                if key_lst[pg.K_LSHIFT]:
+                    neobeam = NeoBeam(bird, 9)
+                    beams.add(neobeam.gen_beams())
+                else:
+                    beams.add(Beam(bird))
+                if event.type == pg.K_TAB: # TABキーで武器を切り替え
                     weapon_system.next()
-                elif event.key == pg.K_SPACE: # スペースキーで武器を発射
+                elif event.type == pg.K_SPACE: # スペースキーで武器を発射
                     beams.add(weapon_system.fire())
         
         # 1秒ごとに敵を出現
