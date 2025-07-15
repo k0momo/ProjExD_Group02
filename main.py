@@ -130,16 +130,19 @@ class Enemy(pg.sprite.Sprite):
     """
     def __init__(self, bird: Bird, tmr: int):
         super().__init__()
-        self.type = tmr // 600 % 3  # 時間に応じて種類を変える
+        self.type = random.randint(0, 2)  # ランダムに種類を変える
 
         if self.type == 0:
             self.image = pg.transform.rotozoom(pg.image.load("fig/alien1.png"), 0, 0.6)
+            self.image.fill((100, 255, 100, 255), special_flags=pg.BLEND_RGBA_MULT)
             self.speed = 2
         elif self.type == 1:
             self.image = pg.transform.rotozoom(pg.image.load("fig/alien2.png"), 0, 0.5)
+            self.image.fill((100, 100, 255, 255), special_flags=pg.BLEND_RGBA_MULT)
             self.speed = 3
         else:
             self.image = pg.transform.rotozoom(pg.image.load("fig/alien3.png"), 0, 0.4)
+            self.image.fill((255, 100, 100, 255), special_flags=pg.BLEND_RGBA_MULT)
             self.speed = 4
 
         self.rect = self.image.get_rect()
