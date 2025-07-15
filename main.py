@@ -130,16 +130,19 @@ class Enemy(pg.sprite.Sprite):
     """
     def __init__(self, bird: Bird, tmr: int):
         super().__init__()
-        self.type = tmr // 600 % 3  # 時間に応じて種類を変える
+        self.type = random.randint(0, 2)  # ランダムに種類を変える
 
         if self.type == 0:
             self.image = pg.transform.rotozoom(pg.image.load("fig/alien1.png"), 0, 0.6)
+            self.image.fill((100, 255, 100, 255), special_flags=pg.BLEND_RGBA_MULT)
             self.speed = 2
         elif self.type == 1:
             self.image = pg.transform.rotozoom(pg.image.load("fig/alien2.png"), 0, 0.5)
+            self.image.fill((100, 100, 255, 255), special_flags=pg.BLEND_RGBA_MULT)
             self.speed = 3
         else:
             self.image = pg.transform.rotozoom(pg.image.load("fig/alien3.png"), 0, 0.4)
+            self.image.fill((255, 100, 100, 255), special_flags=pg.BLEND_RGBA_MULT)
             self.speed = 4
 
         self.rect = self.image.get_rect()
@@ -208,7 +211,7 @@ class Beam(pg.sprite.Sprite):
         self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
         self.speed = 10
         self.is_special = is_special
-        
+
     def update(self):
         """
         ビームを速度ベクトルself.vx, self.vyに基づき移動させる
@@ -285,7 +288,6 @@ class Score:
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
         self.value = 0
-        #self.exp = 0
         self.lv = 1
         self.next_exp = 10 # 次のレベルまでの経験値
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
@@ -447,7 +449,7 @@ def main(screen:pg.Surface):
     # 武器システム設定
     weapon_system = WeaponSystem(bird)
     weapon_system.add(Weapon("Beam", 0.15, lambda b: [Beam(b)])) # 通常のビームを放つ
-    weapon_system.add(Weapon("Spread", 0.8, lambda b: NeoBeam(b, 9).gen_beams())) # 9方向にビームを放つ
+    weapon_system.add(Weapon("Spread", 0.8, lambda b: NeoBeam(b, 3+int(score.lv//5)).gen_beams())) # 3+lvの数でビームを放つ
     special_shot_manager = SpecialShot() # SpecialShotインスタンスを作成
 
 
