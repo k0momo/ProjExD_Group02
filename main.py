@@ -221,7 +221,7 @@ class WeaponSystem:
 def main():
     pg.init()
     pg.display.set_caption("生きろこうかとん！")
-    bg_img = pg.image.load(f"fig/pg_bg.jpg")
+    bg_img = pg.image.load(f"fig/stage.png") 
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     
     score  = Score()
