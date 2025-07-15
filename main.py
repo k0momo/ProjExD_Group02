@@ -34,7 +34,7 @@ def menu():
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 main(screen)
                 time.sleep(1)
-                GameOver(screen)
+                GameOver(scree
                 return 0
             
         screen.blit(bg_img, [0, 0])
@@ -328,6 +328,29 @@ class Explosion(pg.sprite.Sprite):
         self.image = self.imgs[self.life//10%2]
         if self.life < 0:
             self.kill()
+            
+class WeaponSystem: 
+    """複数武器を切替・発射するマネージャー。"""
+    
+    def __init__(self, player: Bird) -> None: # 武器システムの初期化
+        self._player = player # 武器を発射するプレイヤー
+        self._weapons: list[Weapon] = [] # 武器のリスト
+        self._idx = 0  # 現在の武器のインデックス
+        
+    def add(self, weapon: Weapon) -> None:
+        self._weapons.append(weapon) # 武器を追加
+        
+    def next(self) -> None:
+        """次の武器に切り替える"""
+        if self._weapons: # 武器が存在する場合
+            self._idx = (self._idx + 1) % len(self._weapons) # 循環する
+            
+    @property # 現在の武器を取得
+    def current(self) -> Weapon: # 現在の武器を返す
+        return self._weapons[self._idx] 
+    
+    def fire(self) -> List[pg.sprite.Sprite]: # 現在の武器を発射
+        return self.current.fire(self._player)
 
 
 def main(screen:pg.Surface):
