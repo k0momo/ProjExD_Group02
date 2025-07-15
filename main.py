@@ -346,7 +346,8 @@ class BirdHpUI:
         self.rect = self.image.get_rect()
         self.rect.center = 1000, HEIGHT-50
 
-    def update(self, screen:pg.Surface):
+    def update(self, screen:pg.Surface, bird:Bird):
+        self.value = bird.hp
         self.image = self.font.render(f"残りHP: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
@@ -431,9 +432,7 @@ class WeaponSystem:
 
 def main(screen:pg.Surface):
     pg.init()
-    #pg.display.set_caption("生きろこうかとん！")
     bg_img = pg.image.load(f"fig/stage.png") 
-    #screen = pg.display.set_mode((WIDTH, HEIGHT))
     
     score  = Score()
     beams = pg.sprite.Group()
@@ -492,8 +491,6 @@ def main(screen:pg.Surface):
             if hit_enemies:
                 beam.kill()
                 score.value += len(100 * hit_enemies)
-                if not beam.is_special:
-                    beam.kill()
         score.update(screen)
         
         # 現在武器名を表示
@@ -503,11 +500,14 @@ def main(screen:pg.Surface):
         
         pg.display.update()
         # ゲームオーバー判定
-        if pg.sprite.spritecollideany(bird, enemies):
-            print("Game Over!")
-            return
-
-        
+        if pg.sprite.spritecollide(bird, enemies, True):
+            if bird.hp > 1:
+                bird.hp -= 1
+            elif bird.hp == 1:
+                print("Game Over!")
+                time.sleep(1)
+                return 0
+                
 
         for emy in pg.sprite.groupcollide(enemies, beams, True, True).keys():  # ビームと衝突した敵機リスト
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
@@ -515,10 +515,23 @@ def main(screen:pg.Surface):
             score.gain_exp(5)
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
-        #if tmr%31==0:
-            #score.value += 1
+
+        screen.blit(bg_img, [0, 0])
+        bird.update(key_lst, screen)
+        score.update(screen)
+        b_hp_ui.update(screen, bird)
+        
+        beams.update()
+        beams.draw(screen)
+        enemies.update()
+        enemies.draw(screen)
+        
+        
         tmr += 1
         clock.tick(50)
+        exps.update()
+        exps.draw(screen)
+        
         global save_score, save_lv
         save_score = score.value
         save_lv = score.lv
