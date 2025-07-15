@@ -230,8 +230,7 @@ class Score:
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
         self.value = 0
-        self.value = 0
-        self.exp = 0
+        #self.exp = 0
         self.lv = 1
         self.next_exp = 10 # 次のレベルまでの経験値
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
@@ -243,10 +242,10 @@ class Score:
         スコアに経験値を加算し，レベルアップの判定を行う
         引数 exp：加算する経験値
         """
-        self.exp += exp
-        if self.exp >= self.next_exp:
-            self.level += 1
-            self.next_exp += int(self.level * 10)  # 次のレベルアップまでの経験値を増加
+        self.Value += exp
+        if self.Value >= self.next_exp:
+            self.lv += 1
+            self.next_exp += int(self.lv * 10)  # 次のレベルアップまでの経験値を増加
 
     def update(self, screen:pg.Surface):
         self.image = self.font.render(f"Score: {self.value}  Level:{self.lv}", 0, self.color)
@@ -301,6 +300,34 @@ def GameOver(screen:pg.Surface):
         pg.display.update()
 
 
+class Explosion(pg.sprite.Sprite):
+    """
+    爆発に関するクラス
+    """
+    def __init__(self, obj: Enemy, life: int):
+        """
+        爆弾が爆発するエフェクトを生成する
+        引数1 obj：爆発するBombまたは敵機インスタンス
+        引数2 life：爆発時間
+        """
+        super().__init__()
+        img = pg.image.load(f"fig/explosion.gif")
+        self.imgs = [img, pg.transform.flip(img, 1, 1)]
+        self.image = self.imgs[0]
+        self.rect = self.image.get_rect(center=obj.rect.center)
+        self.life = life
+
+    def update(self):
+        """
+        爆発時間を1減算した爆発経過時間_lifeに応じて爆発画像を切り替えることで
+        爆発エフェクトを表現する
+        """
+        self.life -= 1
+        self.image = self.imgs[self.life//10%2]
+        if self.life < 0:
+            self.kill()
+
+
 def main(screen:pg.Surface):
     pg.init()
     #pg.display.set_caption("生きろこうかとん！")
@@ -309,10 +336,11 @@ def main(screen:pg.Surface):
     score  = Score()
     beams = pg.sprite.Group()
     enemies = pg.sprite.Group()  # 敵管理用グループ
-
+    exps = pg.sprite.Group()
     bird = Bird(3, (900, 400))
     b_hp_ui = BirdHpUI(bird)
     clock = pg.time.Clock()
+
     tmr = 0
     pg.mixer.init()
     pg.mixer.music.load("bgm/maou_game_dangeon19.mp3") #bgmの設定
@@ -363,16 +391,12 @@ def main(screen:pg.Surface):
 
         
 
-        for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():  # ビームと衝突した敵機リスト
+        for emy in pg.sprite.groupcollide(enemies, beams, True, True).keys():  # ビームと衝突した敵機リスト
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             score.gain_exp(5)
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
-        for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
-            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
-            score.value += 1  # 1点アップ
-            score.gain_exp(5)
         #if tmr%31==0:
             #score.value += 1
         tmr += 1
