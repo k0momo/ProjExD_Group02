@@ -352,13 +352,15 @@ class Weapon:
         if not self._ready(): 
             return[] # クールダウン中は何もしない
         self._last_fire_time = time.time() # 最後の発射時間を更新
-        return self._fire_func(bird) # 発射関数を呼び出して弾を生成            
+        return self._fire_func(bird) # 発射関数を呼び出して弾を生成 
+
+
 class WeaponSystem: 
     """複数武器を切替・発射するマネージャー。"""
     
     def __init__(self, player: Bird) -> None: # 武器システムの初期化
         self._player = player # 武器を発射するプレイヤー
-        self._weapons: list[WeaponSystem] = [] # 武器のリスト
+        self._weapons: list[Weapon] = [] # 武器のリスト
         self._idx = 0  # 現在の武器のインデックス
         
     def add(self, weapon) -> None:
@@ -370,7 +372,7 @@ class WeaponSystem:
             self._idx = (self._idx + 1) % len(self._weapons) # 循環する
             
     @property # 現在の武器を取得
-    def current(self) -> WeaponSystem: # 現在の武器を返す
+    def current(self) -> Weapon: # 現在の武器を返す
         return self._weapons[self._idx] 
     
     def fire(self) -> List[pg.sprite.Sprite]: # 現在の武器を発射
@@ -410,29 +412,16 @@ def main(screen:pg.Surface):
                 return 0
             if event.type == pg.KEYDOWN:
                 sound_effect.play()
-                if key_lst[pg.K_LSHIFT]:
-                    neobeam = NeoBeam(bird, 9)
-                    beams.add(neobeam.gen_beams())
-                else:
-                    beams.add(Beam(bird))
-                if event.type == pg.K_TAB: # TABキーで武器を切り替え
+                if event.key == pg.K_TAB: # TABキーで武器を切り替え
                     weapon_system.next()
-                elif event.type == pg.K_SPACE: # スペースキーで武器を発射
+                elif event.key == pg.K_SPACE: # スペースキーで武器を発射
                     beams.add(weapon_system.fire())
-        
+
         # 1秒ごとに敵を出現
         if tmr % 60 == 0:
             for _ in range(min(1 + tmr // 600, 10)):
                 enemies.add(Enemy(bird, tmr))
-            
-        screen.blit(bg_img, [0, 0])
 
-        if event.type == pg.KEYDOWN: # キーが押されたとき
-            if event.key == pg.K_TAB: # TABキーで武器を切り替え
-                weapon_system.next()
-            elif event.key == pg.K_SPACE: # スペースキーで武器を発射
-                beams.add(weapon_system.fire())
-                    
         screen.blit(bg_img, [0, 0])
         bird.update(key_lst, screen)
         score.update(screen)
