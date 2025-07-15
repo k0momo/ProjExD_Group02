@@ -243,8 +243,8 @@ class Score:
         スコアに経験値を加算し，レベルアップの判定を行う
         引数 exp：加算する経験値
         """
-        self.Value += exp
-        if self.Value >= self.next_exp:
+        self.value += exp
+        if self.value >= self.next_exp:
             self.lv += 1
             self.next_exp += int(self.lv * 10)  # 次のレベルアップまでの経験値を増加
 
@@ -296,7 +296,8 @@ class BirdHpUI:
         self.rect = self.image.get_rect()
         self.rect.center = 1000, HEIGHT-50
 
-    def update(self, screen:pg.Surface):
+    def update(self, screen:pg.Surface, bird:Bird):
+        self.value = bird.hp
         self.image = self.font.render(f"残りHP: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
@@ -352,13 +353,15 @@ class Weapon:
         if not self._ready(): 
             return[] # クールダウン中は何もしない
         self._last_fire_time = time.time() # 最後の発射時間を更新
-        return self._fire_func(bird) # 発射関数を呼び出して弾を生成            
+        return self._fire_func(bird) # 発射関数を呼び出して弾を生成 
+
+
 class WeaponSystem: 
     """複数武器を切替・発射するマネージャー。"""
     
     def __init__(self, player: Bird) -> None: # 武器システムの初期化
         self._player = player # 武器を発射するプレイヤー
-        self._weapons: list[WeaponSystem] = [] # 武器のリスト
+        self._weapons: list[Weapon] = [] # 武器のリスト
         self._idx = 0  # 現在の武器のインデックス
         
     def add(self, weapon) -> None:
@@ -379,9 +382,7 @@ class WeaponSystem:
 
 def main(screen:pg.Surface):
     pg.init()
-    #pg.display.set_caption("生きろこうかとん！")
     bg_img = pg.image.load(f"fig/stage.png") 
-    #screen = pg.display.set_mode((WIDTH, HEIGHT))
     
     score  = Score()
     beams = pg.sprite.Group()
@@ -410,58 +411,31 @@ def main(screen:pg.Surface):
                 return 0
             if event.type == pg.KEYDOWN:
                 sound_effect.play()
-                if key_lst[pg.K_LSHIFT]:
-                    neobeam = NeoBeam(bird, 9)
-                    beams.add(neobeam.gen_beams())
-                else:
-                    beams.add(Beam(bird))
-                if event.type == pg.K_TAB: # TABキーで武器を切り替え
+                if event.key == pg.K_TAB: # TABキーで武器を切り替え
                     weapon_system.next()
-                elif event.type == pg.K_SPACE: # スペースキーで武器を発射
+                elif event.key == pg.K_SPACE: # スペースキーで武器を発射
                     beams.add(weapon_system.fire())
-        
+
         # 1秒ごとに敵を出現
         if tmr % 60 == 0:
             for _ in range(min(1 + tmr // 600, 10)):
                 enemies.add(Enemy(bird, tmr))
-            
-        screen.blit(bg_img, [0, 0])
 
-        if event.type == pg.KEYDOWN: # キーが押されたとき
-            if event.key == pg.K_TAB: # TABキーで武器を切り替え
-                weapon_system.next()
-            elif event.key == pg.K_SPACE: # スペースキーで武器を発射
-                beams.add(weapon_system.fire())
-                    
-        screen.blit(bg_img, [0, 0])
-        bird.update(key_lst, screen)
-        score.update(screen)
-        b_hp_ui.update(screen)
-        
-        beams.update()
-        beams.draw(screen)
-        enemies.update()
-        enemies.draw(screen)
-        # ビームと敵の衝突判定
-        for beam in beams:
-            hit_enemies = pg.sprite.spritecollide(beam, enemies, True)
-            if hit_enemies:
-                beam.kill()
-                score.value += len(100 * hit_enemies)
-        score.update(screen)
-        
-        # 現在武器名を表示
+# 現在武器名を表示
         font = pg.font.Font(None, 36) # フォントの設定
         hud = font.render(f"Weapon: {weapon_system.current.name}", True, (255, 255, 255)) # 武器名を描画
         screen.blit(hud, (10, 10)) # 画面左上に表示
         
         pg.display.update()
         # ゲームオーバー判定
-        if pg.sprite.spritecollideany(bird, enemies):
-            print("Game Over!")
-            return
-
-        
+        if pg.sprite.spritecollide(bird, enemies, True):
+            if bird.hp > 1:
+                bird.hp -= 1
+            elif bird.hp == 1:
+                print("Game Over!")
+                time.sleep(1)
+                return 0
+                
 
         for emy in pg.sprite.groupcollide(enemies, beams, True, True).keys():  # ビームと衝突した敵機リスト
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
@@ -469,10 +443,23 @@ def main(screen:pg.Surface):
             score.gain_exp(5)
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
-        #if tmr%31==0:
-            #score.value += 1
+
+        screen.blit(bg_img, [0, 0])
+        bird.update(key_lst, screen)
+        score.update(screen)
+        b_hp_ui.update(screen, bird)
+        
+        beams.update()
+        beams.draw(screen)
+        enemies.update()
+        enemies.draw(screen)
+        
+        
         tmr += 1
         clock.tick(50)
+        exps.update()
+        exps.draw(screen)
+        
         global save_score, save_lv
         save_score = score.value
         save_lv = score.lv
